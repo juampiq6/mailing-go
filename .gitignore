@@ -10,3 +10,6 @@
 
 # Output of the go coverage tool, specifically when used with LiteIDE
 *.out
+
+# Firebase key
+mailing-e-commerce-firebase-adminsdk-2jetw-1edd40aaf3.json
