@@ -1,20 +1,59 @@
 package main
 
-import gomail "gopkg.in/gomail.v2"
+import (
+	"bytes"
+	html "html/template"
+	"log"
 
-type CallBody struct {
-	Direccion  []string `binding:"required" json:"direccion"`
-	Id_usuario []int    `json:"id_usuario"`
-	Subject    string   `binding:"required" json:"subject"`
+	gomail "gopkg.in/gomail.v2"
+)
+
+type callBody struct {
+	Direccion []string `binding:"required" json:"direccion"`
+	IDUsuario []int    `json:"id_usuario"`
+	Subject   string   `binding:"required" json:"subject"`
 }
 
-func (b CallBody) sendSpecific(tempname string) error {
+func parseTemplate(templateFileName string, data interface{}) (string, error) {
+	templateData := struct {
+		Name string
+		URL  string
+	}{
+		Name: "Dhanush",
+		URL:  "http://geektrust.in",
+	}
+	parseo, err := html.ParseFiles(templateFileName)
+	if err != nil {
+		return "", err
+	}
+	buf := new(bytes.Buffer)
+	if err = parseo.Execute(buf, templateData); err != nil {
+		return "", err
+	}
+	result := buf.String()
+	return result, nil
+}
+
+func (b callBody) sendSpecific(tempname string) error {
 	m := gomail.NewMessage()
 	m.SetHeader("From", "microservicios.mailing@gmail.com")
 	m.SetHeader("To", b.Direccion...)
 	// m.SetAddressHeader("Cc", "dan@example.com", "Dan")
 	m.SetHeader("Subject", b.Subject)
-	m.SetBody("text/html", "<b> Hello template name recibido: </b> <i>"+tempname+"</i>!")
+	templateData := struct {
+		Name string
+		URL  string
+	}{
+		Name: "Pablo",
+		URL:  "http://facebook.com",
+	}
+	res, err := parseTemplate("./templateee.html", templateData)
+	if err != nil {
+		log.Print(err)
+		return err
+	}
+	log.Print(res)
+	m.SetBody("text/html", res)
 
 	d := gomail.NewDialer("smtp.gmail.com", 587, "microservicios.mailing@gmail.com", "lkssoxmjqoyywgnb")
 

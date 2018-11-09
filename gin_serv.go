@@ -28,7 +28,7 @@ func main() {
 
 func postTemplate(c *gin.Context) {
 	tempname := c.Param("template_name")
-	var bindeo Template
+	var bindeo template
 	err := c.BindJSON(&bindeo)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error bindeo": &err})
@@ -38,7 +38,7 @@ func postTemplate(c *gin.Context) {
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"error firebase": &err})
 			} else {
-				c.JSON(http.StatusAccepted, gin.H{"created": &bindeo.Template_name})
+				c.JSON(http.StatusAccepted, gin.H{"created": &bindeo.TemplateName})
 			}
 		} else {
 			err := bindeo.postTemplateFirebase()
@@ -55,7 +55,7 @@ func postTemplate(c *gin.Context) {
 
 func getTemplate(c *gin.Context) {
 	nombre := c.Param("template_name")
-	var arrayTemp []Template
+	var arrayTemp []template
 	arrayTemp, err := getTemplateFirebase(nombre)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error getting template from firebase": err})
@@ -69,7 +69,7 @@ func getTemplate(c *gin.Context) {
 }
 
 func specific(c *gin.Context) {
-	var body CallBody
+	var body callBody
 	err := c.BindJSON(&body)
 	if err != nil {
 		c.AbortWithError(http.StatusInternalServerError, err)
