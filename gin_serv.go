@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -13,35 +12,79 @@ func main() {
 	v1 := req.Group("/mailing/v1")
 
 	templ := v1.Group("/template")
-
-	templ.POST("/:template_id", func(c *gin.Context) { postTemplate(c) })
-	templ.GET("/:template_id_name", func(c *gin.Context) { getTemplate(c) })
+	templ.POST("/", func(c *gin.Context) { postTemplate(c) })
+	templ.POST("/:template_name", func(c *gin.Context) { postTemplate(c) })
+	templ.GET("/:template_name", func(c *gin.Context) { getTemplate(c) })
+	templ.GET("/", func(c *gin.Context) { getTemplate(c) })
 
 	send := v1.Group("/send")
 
-	send.POST("/specific/:template_id", func(c *gin.Context) { sendSpecific(c) })
-	send.POST("/broadcast/:template_id", func(c *gin.Context) { sendBroadcast(c) })
+	send.POST("/specific/:template_name", func(c *gin.Context) { specific(c) })
+	send.POST("/broadcast/:template_name", func(c *gin.Context) { broadcast(c) })
 
 	req.Run(":22000")
 
 }
 
 func postTemplate(c *gin.Context) {
-	bindeo := &Template{}
-	err := c.Bind(&bindeo)
+	tempname := c.Param("template_name")
+	var bindeo Template
+	err := c.BindJSON(&bindeo)
 	if err != nil {
-		log.Print(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error bindeo": &err})
+	} else {
+		if tempname == "" {
+			err := bindeo.postTemplateFirebase()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error firebase": &err})
+			} else {
+				c.JSON(http.StatusAccepted, gin.H{"created": &bindeo.Template_name})
+			}
+		} else {
+			err := bindeo.postTemplateFirebase()
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error firebase": &err})
+			} else {
+				c.JSON(http.StatusAccepted, gin.H{"modified": &tempname})
+			}
+
+		}
 	}
-	fmt.Printf("%s", string(bindeo.template_name))
-	c.JSON(http.StatusAccepted, gin.H{"mensaje": string(bindeo.template_id)})
 	return
 }
+
 func getTemplate(c *gin.Context) {
-	c.JSON(http.StatusAccepted, gin.H{"mensaje": (c.Param("template_id_name"))})
+	nombre := c.Param("template_name")
+	var arrayTemp []Template
+	arrayTemp, err := getTemplateFirebase(nombre)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error getting template from firebase": err})
+		//c.AbortWithError(http.StatusInternalServerError, err)
+	} else {
+		if err != nil {
+			log.Print(err)
+		}
+		c.JSON(http.StatusAccepted, gin.H{"templatesEncontrados": arrayTemp})
+	}
 }
-func sendSpecific(c *gin.Context) {
-	c.JSON(http.StatusAccepted, gin.H{"mensaje": (c.Param("template_id"))})
+
+func specific(c *gin.Context) {
+	var body CallBody
+	err := c.BindJSON(&body)
+	if err != nil {
+		c.AbortWithError(http.StatusInternalServerError, err)
+		c.JSON(http.StatusBadRequest, gin.H{"error bindeo": err})
+	} else {
+		err := body.sendSpecific(c.Param("template_name"))
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error sending": &err})
+		} else {
+			c.JSON(http.StatusAccepted, gin.H{"success": "Se envio correctamente el mail"})
+		}
+	}
+
 }
-func sendBroadcast(c *gin.Context) {
-	c.JSON(http.StatusAccepted, gin.H{"mensaje": (c.Param("template_id"))})
+
+func broadcast(c *gin.Context) {
+	c.JSON(http.StatusAccepted, gin.H{"mensaje": (c.Param("template_name"))})
 }
