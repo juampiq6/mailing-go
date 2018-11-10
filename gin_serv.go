@@ -56,7 +56,7 @@ func postTemplate(c *gin.Context) {
 func getTemplate(c *gin.Context) {
 	nombre := c.Param("template_name")
 	var arrayTemp []template
-	arrayTemp, err := getTemplateFirebase(nombre)
+	arrayTemp, _, err := getTemplateFirebase(nombre)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error getting template from firebase": err})
 		//c.AbortWithError(http.StatusInternalServerError, err)

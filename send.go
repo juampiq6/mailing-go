@@ -8,21 +8,20 @@ import (
 	gomail "gopkg.in/gomail.v2"
 )
 
-type callBody struct {
-	Direccion []string `binding:"required" json:"direccion"`
-	IDUsuario []int    `json:"id_usuario"`
-	Subject   string   `binding:"required" json:"subject"`
+type varsTemp struct {
+	selector string
+	valor    string
 }
 
-func parseTemplate(templateFileName string, data interface{}) (string, error) {
-	templateData := struct {
-		Name string
-		URL  string
-	}{
-		Name: "Dhanush",
-		URL:  "http://geektrust.in",
-	}
-	parseo, err := html.ParseFiles(templateFileName)
+type callBody struct {
+	Direccion         []string   `binding:"required" json:"direccion"`
+	IDUsuario         []int      `json:"id_usuario"`
+	Subject           string     `binding:"required" json:"subject"`
+	VariablesTemplate []varsTemp `json:"variables_template"`
+}
+
+func parseTemplate(templateBody string, templateData interface{}) (string, error) {
+	parseo, err := html.New("temp").Parse(templateBody)
 	if err != nil {
 		return "", err
 	}
@@ -35,6 +34,9 @@ func parseTemplate(templateFileName string, data interface{}) (string, error) {
 }
 
 func (b callBody) sendSpecific(tempname string) error {
+
+	_, temp, err := getTemplateFirebase(tempname)
+	// pasar var temps a una struct personalizada
 	m := gomail.NewMessage()
 	m.SetHeader("From", "microservicios.mailing@gmail.com")
 	m.SetHeader("To", b.Direccion...)
@@ -47,7 +49,7 @@ func (b callBody) sendSpecific(tempname string) error {
 		Name: "Pablo",
 		URL:  "http://facebook.com",
 	}
-	res, err := parseTemplate("./templateee.html", templateData)
+	res, err := parseTemplate(temp.TemplateBody, templateData)
 	if err != nil {
 		log.Print(err)
 		return err

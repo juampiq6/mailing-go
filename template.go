@@ -30,7 +30,7 @@ func (t template) postTemplateFirebase() error {
 	return nil
 }
 
-func getTemplateFirebase(tempName string) ([]template, error) {
+func getTemplateFirebase(tempName string) ([]template, template, error) {
 
 	client, ctx, err := getFireStore()
 	if err != nil {
@@ -50,27 +50,25 @@ func getTemplateFirebase(tempName string) ([]template, error) {
 				break
 			}
 			if err != nil {
-				return nil, err
+				return nil, template{"", ""}, err
 			}
 			tempElem.TemplateName = doc.Ref.ID
 			doc.DataTo(&tempElem)
 			sliceTemp = append(sliceTemp, tempElem)
 			i++
 		}
-		return sliceTemp, nil
+		return sliceTemp, template{"", ""}, nil
 	} else {
-		sliceTemp := make([]template, 0)
 		var tempzero template
 		doc, err := client.Collection("template").Doc(tempName).Get(ctx)
 		if err != nil {
-			return nil, err
+			return nil, template{"", ""}, err
 		}
 		tempzero.TemplateName = doc.Ref.ID
 		err = doc.DataTo(&tempzero)
 		if err != nil {
 			log.Print("error datato ", err)
 		}
-		sliceTemp = append(sliceTemp, tempzero)
-		return sliceTemp, nil
+		return nil, tempzero, nil
 	}
 }
